@@ -1,1 +1,521 @@
-loadstring(game:HttpGet("https://raw.githubusercontent.com/USERNAME/REPO/BRANCH/Cherry.lua"))()
+local RayfieldSource = game:HttpGet('https://sirius.menu/rayfield')
+local Rayfield = loadstring(RayfieldSource)()
+
+local LoadHub -- Forward declare so it can be called early
+local CherryAuthenticated = false
+
+local KillSwitchURL = "https://pastebin.com/raw/U5nXBNnU"
+
+task.spawn(function()
+    while task.wait(5) do
+        if KillSwitchURL and KillSwitchURL ~= "" then
+            local success, status = pcall(function()
+                return game:HttpGet(KillSwitchURL .. "?bypasscache=" .. tostring(math.random(1, 9999999)))
+            end)
+            
+            if success and status then
+                if string.find(string.upper(status), "KILLED") or string.find(string.upper(status), "OFFLINE") then
+                    pcall(function() Rayfield:Destroy() end)
+                    
+                    pcall(function()
+                        for _, gui in pairs(game:GetService("CoreGui"):GetChildren()) do
+                            if gui:IsA("ScreenGui") and (gui:FindFirstChild("Main") or gui.Name == "Rayfield") then
+                                gui:Destroy()
+                            end
+                        end
+                    end)
+
+                    game.Players.LocalPlayer:Kick("Cherry Exploit Menu has been globally shut down by the creator.")
+                    break
+                end
+            end
+        end
+    end
+end)
+
+local function LoadUniversal()
+    local Window = Rayfield:CreateWindow({
+       Name = "Cherry Exploit Menu (Universal)",
+       Icon = 0,
+       LoadingTitle = "Loading Cherry",
+       LoadingSubtitle = "Please wait...",
+       ShowText = "Cherry",
+       Theme = "Bloom",
+       ToggleUIKeybind = "K",
+       DisableRayfieldPrompts = false,
+       DisableBuildWarnings = false,
+       ConfigurationSaving = {
+          Enabled = true,
+          FolderName = "CherryHub",
+          FileName = "UniversalConfig"
+       },
+       Discord = {
+          Enabled = false,
+          Invite = "noinvitelink",
+          RememberJoins = true
+       },
+       KeySystem = false, -- Key only prompts on the main hub
+    })
+
+    -- [[ TABS ]]
+    local MainTab = Window:CreateTab("Main", 4483362458)
+    local SettingsTab = Window:CreateTab("Settings", 4483362458)
+    local MenuSettingsTab = Window:CreateTab("Menu Settings", 4483362458)
+
+    -- [[ SECTIONS ]]
+    local MainSection = MainTab:CreateSection("Features")
+    local SettingsSection = SettingsTab:CreateSection("Configuration")
+    local MenuSettingsSection = MenuSettingsTab:CreateSection("Menu Controls")
+
+    local DestroyButton = MenuSettingsTab:CreateButton({
+       Name = "Script Close",
+       Callback = function()
+           task.spawn(function()
+               Rayfield:Destroy()
+               task.wait(0.5)
+               Rayfield = loadstring(RayfieldSource)()
+               if LoadHub then LoadHub() end
+           end)
+       end,
+    })
+
+    local ReturnNote = MenuSettingsTab:CreateParagraph({
+       Title = "Note:",
+       Content = "Sends you back to Game Selection Hub"
+    })
+
+
+
+    -- [[ FLY LOGIC ]]
+    local flying = false
+    local flySpeed = 50
+
+    local FlyToggle = MainTab:CreateToggle({
+       Name = "Fly",
+       CurrentValue = false,
+       Flag = "FlyToggle",
+       Callback = function(Value)
+           flying = Value
+           local plr = game:GetService("Players").LocalPlayer
+           local char = plr.Character
+           if not char then return end
+           local root = char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Torso") or char:FindFirstChild("UpperTorso")
+           local hum = char:FindFirstChildWhichIsA("Humanoid")
+           
+           if flying then
+               if root then
+                   local bg = Instance.new("BodyGyro", root)
+                   bg.Name = "FlyGyro"
+                   bg.P = 9e4
+                   bg.maxTorque = Vector3.new(9e9, 9e9, 9e9)
+                   bg.cframe = root.CFrame
+                   
+                   local bv = Instance.new("BodyVelocity", root)
+                   bv.Name = "FlyVel"
+                   bv.maxForce = Vector3.new(9e9, 9e9, 9e9)
+                   bv.velocity = Vector3.new(0, 0.1, 0)
+                   
+                   if hum then hum.PlatformStand = true end
+                   
+                   getgenv().FlyLoop = game:GetService("RunService").RenderStepped:Connect(function()
+                       if not flying then
+                           if getgenv().FlyLoop then getgenv().FlyLoop:Disconnect() getgenv().FlyLoop = nil end
+                           return
+                       end
+                       local cam = workspace.CurrentCamera
+                       local uis = game:GetService("UserInputService")
+                       local moveDir = Vector3.new(0,0,0)
+                       
+                       if uis:IsKeyDown(Enum.KeyCode.W) then moveDir = moveDir + cam.CFrame.LookVector end
+                       if uis:IsKeyDown(Enum.KeyCode.S) then moveDir = moveDir - cam.CFrame.LookVector end
+                       if uis:IsKeyDown(Enum.KeyCode.A) then moveDir = moveDir - cam.CFrame.RightVector end
+                       if uis:IsKeyDown(Enum.KeyCode.D) then moveDir = moveDir + cam.CFrame.RightVector end
+                       if uis:IsKeyDown(Enum.KeyCode.Space) then moveDir = moveDir + Vector3.new(0, 1, 0) end
+                       if uis:IsKeyDown(Enum.KeyCode.LeftShift) then moveDir = moveDir - Vector3.new(0, 1, 0) end
+                       
+                       if moveDir.Magnitude > 0 then moveDir = moveDir.Unit end
+                       
+                       if root:FindFirstChild("FlyGyro") then root.FlyGyro.cframe = cam.CFrame end
+                       if root:FindFirstChild("FlyVel") then root.FlyVel.velocity = moveDir * flySpeed end
+                   end)
+               end
+           else
+               if root then
+                   if root:FindFirstChild("FlyGyro") then root.FlyGyro:Destroy() end
+                   if root:FindFirstChild("FlyVel") then root.FlyVel:Destroy() end
+               end
+               if hum then hum.PlatformStand = false end
+               if getgenv().FlyLoop then getgenv().FlyLoop:Disconnect() getgenv().FlyLoop = nil end
+           end
+       end,
+    })
+
+    local FlyKeybind = MainTab:CreateKeybind({
+       Name = "Fly Toggle Keybind",
+       CurrentKeybind = "F",
+       HoldToInteract = false,
+       Flag = "FlyKeybind",
+       Callback = function(Keybind)
+           FlyToggle:Set(not flying)
+       end,
+    })
+
+    local FlySlider = MainTab:CreateSlider({
+       Name = "Fly Speed",
+       Range = {10, 300},
+       Increment = 1,
+       Suffix = " Speed",
+       CurrentValue = 50,
+       Flag = "FlySpeedSlider",
+       Callback = function(Value)
+           flySpeed = Value
+       end,
+    })
+
+    -- [[ FLING LOGIC ]]
+    local flingTarget = ""
+
+    local function getPlayerByName(partialName)
+        if not partialName or partialName == "" then return nil end
+        local lowered = string.lower(partialName)
+        for _, plr in ipairs(game:GetService("Players"):GetPlayers()) do
+            if string.sub(string.lower(plr.Name), 1, #lowered) == lowered then
+                return plr
+            end
+            if string.sub(string.lower(plr.DisplayName), 1, #lowered) == lowered then
+                return plr
+            end
+        end
+        return nil
+    end
+
+    MainTab:CreateSection("Fling")
+
+    local FlingTargetInput = MainTab:CreateInput({
+       Name = "Target Player (Name/Display)",
+       CurrentValue = "",
+       PlaceholderText = "Type player name...",
+       RemoveTextAfterFocusLost = false,
+       Flag = "NDSFlingTarget",
+       Callback = function(Text)
+           flingTarget = Text
+       end,
+    })
+
+    local FlingButton = MainTab:CreateButton({
+       Name = "Fling Target",
+       Callback = function()
+           local players = game:GetService("Players")
+           local localPlayer = players.LocalPlayer
+           local targetPlayer = getPlayerByName(flingTarget)
+
+           if not targetPlayer or targetPlayer == localPlayer then
+               Rayfield:Notify({
+                   Title = "Fling",
+                   Content = "Enter a valid target that is not you.",
+                   Duration = 3,
+                   Image = 4483362458
+               })
+               return
+           end
+
+           local character = localPlayer.Character
+           local targetCharacter = targetPlayer.Character
+           if not character or not targetCharacter then
+               Rayfield:Notify({
+                   Title = "Fling",
+                   Content = "Character not loaded. Try again.",
+                   Duration = 3,
+                   Image = 4483362458
+               })
+               return
+           end
+
+           local root = character:FindFirstChild("HumanoidRootPart")
+           local targetRoot = targetCharacter:FindFirstChild("HumanoidRootPart")
+           if not root or not targetRoot then
+               Rayfield:Notify({
+                   Title = "Fling",
+                   Content = "Missing HumanoidRootPart.",
+                   Duration = 3,
+                   Image = 4483362458
+               })
+               return
+           end
+
+           local oldCFrame = root.CFrame
+           local attachment = Instance.new("BodyAngularVelocity")
+           attachment.AngularVelocity = Vector3.new(0, 6000, 0)
+           attachment.MaxTorque = Vector3.new(0, math.huge, 0)
+           attachment.P = 125000
+           attachment.Parent = root
+
+           root.CFrame = targetRoot.CFrame + Vector3.new(0, 1, 0)
+           task.wait(0.35)
+           attachment:Destroy()
+           root.CFrame = oldCFrame
+
+           Rayfield:Notify({
+               Title = "Fling",
+               Content = "Attempted to fling " .. targetPlayer.Name .. ".",
+               Duration = 3,
+               Image = 4483362458
+           })
+       end,
+    })
+
+end
+
+local function LoadNDS()
+    local Window = Rayfield:CreateWindow({
+       Name = "Cherry Natural Disaster Survival Menu",
+       Icon = 0,
+       LoadingTitle = "Loading NDS Scripts",
+       LoadingSubtitle = "Please wait...",
+       ShowText = "Cherry",
+       Theme = "Bloom",
+       ToggleUIKeybind = "K",
+       DisableRayfieldPrompts = false,
+       DisableBuildWarnings = false,
+       ConfigurationSaving = { Enabled = true, FolderName = "CherryHub", FileName = "NDSConfig" },
+       Discord = { Enabled = false, Invite = "noinvitelink", RememberJoins = true },
+       KeySystem = false, -- Key only prompts on the main hub
+    })
+
+    -- [[ TABS ]]
+    local MainTab = Window:CreateTab("Main", 4483362458)
+    local SettingsTab = Window:CreateTab("Settings", 4483362458)
+    local MenuSettingsTab = Window:CreateTab("Script Settings", 4483362458)
+
+    -- [[ SECTIONS ]]
+    local MainSection = MainTab:CreateSection("Features")
+    local SettingsSection = SettingsTab:CreateSection("Configuration")
+    local MenuSettingsSection = MenuSettingsTab:CreateSection("Menu Controls")
+
+    local DestroyButton = MenuSettingsTab:CreateButton({
+       Name = "Script Close",
+       Callback = function()
+           task.spawn(function()
+               Rayfield:Destroy()
+               task.wait(0.5)
+               Rayfield = loadstring(RayfieldSource)()
+               if LoadHub then LoadHub() end
+           end)
+       end,
+    })
+
+    local ReturnNote = MenuSettingsTab:CreateParagraph({
+       Title = "Note:",
+       Content = "Sends you back to Game Selection Hub"
+    })
+
+
+
+    -- [[ FLY LOGIC ]]
+    local flying = false
+    local flySpeed = 50
+
+    local FlyToggle = MainTab:CreateToggle({
+       Name = "Fly",
+       CurrentValue = false,
+       Flag = "FlyToggle",
+       Callback = function(Value)
+           flying = Value
+           local plr = game:GetService("Players").LocalPlayer
+           local char = plr.Character
+           if not char then return end
+           local root = char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Torso") or char:FindFirstChild("UpperTorso")
+           local hum = char:FindFirstChildWhichIsA("Humanoid")
+           
+           if flying then
+               if root then
+                   local bg = Instance.new("BodyGyro", root)
+                   bg.Name = "FlyGyro"
+                   bg.P = 9e4
+                   bg.maxTorque = Vector3.new(9e9, 9e9, 9e9)
+                   bg.cframe = root.CFrame
+                   
+                   local bv = Instance.new("BodyVelocity", root)
+                   bv.Name = "FlyVel"
+                   bv.maxForce = Vector3.new(9e9, 9e9, 9e9)
+                   bv.velocity = Vector3.new(0, 0.1, 0)
+                   
+                   if hum then hum.PlatformStand = true end
+                   
+                   getgenv().FlyLoop = game:GetService("RunService").RenderStepped:Connect(function()
+                       if not flying then
+                           if getgenv().FlyLoop then getgenv().FlyLoop:Disconnect() getgenv().FlyLoop = nil end
+                           return
+                       end
+                       local cam = workspace.CurrentCamera
+                       local uis = game:GetService("UserInputService")
+                       local moveDir = Vector3.new(0,0,0)
+                       
+                       if uis:IsKeyDown(Enum.KeyCode.W) then moveDir = moveDir + cam.CFrame.LookVector end
+                       if uis:IsKeyDown(Enum.KeyCode.S) then moveDir = moveDir - cam.CFrame.LookVector end
+                       if uis:IsKeyDown(Enum.KeyCode.A) then moveDir = moveDir - cam.CFrame.RightVector end
+                       if uis:IsKeyDown(Enum.KeyCode.D) then moveDir = moveDir + cam.CFrame.RightVector end
+                       if uis:IsKeyDown(Enum.KeyCode.Space) then moveDir = moveDir + Vector3.new(0, 1, 0) end
+                       if uis:IsKeyDown(Enum.KeyCode.LeftShift) then moveDir = moveDir - Vector3.new(0, 1, 0) end
+                       
+                       if moveDir.Magnitude > 0 then moveDir = moveDir.Unit end
+                       
+                       if root:FindFirstChild("FlyGyro") then root.FlyGyro.cframe = cam.CFrame end
+                       if root:FindFirstChild("FlyVel") then root.FlyVel.velocity = moveDir * flySpeed end
+                   end)
+               end
+           else
+               if root then
+                   if root:FindFirstChild("FlyGyro") then root.FlyGyro:Destroy() end
+                   if root:FindFirstChild("FlyVel") then root.FlyVel:Destroy() end
+               end
+               if hum then hum.PlatformStand = false end
+               if getgenv().FlyLoop then getgenv().FlyLoop:Disconnect() getgenv().FlyLoop = nil end
+           end
+       end,
+    })
+
+    local FlyKeybind = MainTab:CreateKeybind({
+       Name = "Fly Toggle Keybind",
+       CurrentKeybind = "F",
+       HoldToInteract = false,
+       Flag = "FlyKeybind",
+       Callback = function(Keybind)
+           FlyToggle:Set(not flying)
+       end,
+    })
+
+    local FlySlider = MainTab:CreateSlider({
+       Name = "Fly Speed",
+       Range = {10, 300},
+       Increment = 1,
+       Suffix = " Speed",
+       CurrentValue = 50,
+       Flag = "FlySpeedSlider",
+       Callback = function(Value)
+           flySpeed = Value
+       end,
+    })
+
+end
+
+local function LoadPS99()
+    local Window = Rayfield:CreateWindow({
+       Name = "Cherry Pet Simulator 99 Menu",
+       Icon = 0,
+       LoadingTitle = "Loading PS99 Scripts",
+       LoadingSubtitle = "Please wait...",
+       ShowText = "Cherry",
+       Theme = "Bloom",
+       ToggleUIKeybind = "K",
+       DisableRayfieldPrompts = false,
+       DisableBuildWarnings = false,
+       ConfigurationSaving = { Enabled = true, FolderName = "CherryHub", FileName = "PS99Config" },
+       Discord = { Enabled = false, Invite = "noinvitelink", RememberJoins = true },
+       KeySystem = false,
+    })
+
+    -- [[ TABS ]]
+    local MainTab = Window:CreateTab("Main", 4483362458)
+    local SettingsTab = Window:CreateTab("Settings", 4483362458)
+    local MenuSettingsTab = Window:CreateTab("Menu Settings", 4483362458)
+
+    -- [[ SECTIONS ]]
+    local MainSection = MainTab:CreateSection("Features")
+    local SettingsSection = SettingsTab:CreateSection("Configuration")
+    local MenuSettingsSection = MenuSettingsTab:CreateSection("Menu Controls")
+
+    local DestroyButton = MenuSettingsTab:CreateButton({
+       Name = "Script Close",
+       Callback = function()
+           task.spawn(function()
+               Rayfield:Destroy()
+               task.wait(0.5)
+               Rayfield = loadstring(RayfieldSource)()
+               if LoadHub then LoadHub() end
+           end)
+       end,
+    })
+
+    local ReturnNote = MenuSettingsTab:CreateParagraph({
+       Title = "Note:",
+       Content = "Sends you back to Game Selection Hub"
+    })
+
+    -- [[ PS99 SPECIFIC LOGIC ]]
+    -- Add features here
+end
+
+LoadHub = function()
+    local Window = Rayfield:CreateWindow({
+       Name = "Cherry Game Selection Hub",
+       Icon = 0,
+       LoadingTitle = "Loading Cherry Hub",
+       LoadingSubtitle = "Please authenticate...",
+       ShowText = "Cherry",
+       Theme = "Bloom",
+       ToggleUIKeybind = "K",
+       DisableRayfieldPrompts = false,
+       DisableBuildWarnings = false,
+       ConfigurationSaving = { Enabled = true, FolderName = "CherryHub", FileName = "HubConfig" },
+       Discord = { Enabled = false, Invite = "noinvitelink", RememberJoins = true },
+       KeySystem = not CherryAuthenticated,
+       KeySettings = {
+          Title = "Cherry Auth",
+          Subtitle = "Key System",
+          Note = "key: test",
+          FileName = "CherryKey",
+          SaveKey = true,
+          GrabKeyFromSite = false,
+          Key = {"test"}
+       }
+    })
+
+    local GamesTab = Window:CreateTab("Game Hub", 4483362458)
+    local SettingsTab = Window:CreateTab("Exploit Settings", 4483362458)
+
+    local GamesSection = GamesTab:CreateSection("Select an Option to Load")
+    local SettingsSection = SettingsTab:CreateSection("Exploit Configuration")
+
+    local NDSBtn = GamesTab:CreateButton({
+       Name = "Load Natural Disaster Survival",
+       Callback = function()
+           CherryAuthenticated = true
+           Rayfield:Destroy()
+           task.wait(0.2)
+           Rayfield = loadstring(RayfieldSource)()
+           LoadNDS()
+       end,
+    })
+
+    local PS99Btn = GamesTab:CreateButton({
+       Name = "Load Pet Simulator 99",
+       Callback = function()
+           CherryAuthenticated = true
+           Rayfield:Destroy()
+           task.wait(0.2)
+           Rayfield = loadstring(RayfieldSource)()
+           LoadPS99()
+       end,
+    })
+
+    local ExploitCloseBtn = SettingsTab:CreateButton({
+       Name = "Unload Exploit",
+       Callback = function()
+           Rayfield:Destroy()
+       end,
+    })
+
+end
+
+-- ==============================================
+-- BOOT HUB
+-- ==============================================
+LoadHub()
+
+--[[
+---------------------------------------------------------
+-- UI ELEMENT EXAMPLES (COPY AND PASTE TO USE THEM) --
+---------------------------------------------------------
+-- (Commented out to save scroll space)
+]]
