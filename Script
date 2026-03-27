@@ -463,8 +463,7 @@ LoadHub = function()
        KeySettings = {
           Title = "Cherry Auth",
           Subtitle = "Key System",
-          Note = "key: test
-           Owner: Bwalt",
+          Note = "key: test | Owner: Bwalt",
           FileName = "CherryKey",
           SaveKey = true,
           GrabKeyFromSite = false,
